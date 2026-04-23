@@ -1,0 +1,20 @@
+@import "@lichess-org/chessground/assets/chessground.base.css";
+@import "@lichess-org/chessground/assets/chessground.brown.css";
+@import "@lichess-org/chessground/assets/chessground.cburnett.css";
+
+/* Brand colour overrides */
+.cg-wrap cg-board {
+  background-color: var(--pt-cream);
+}
+.cg-wrap cg-board square.light {
+  background-color: var(--pt-cream);
+}
+.cg-wrap cg-board square.dark {
+  background-color: var(--pt-forest-soft);
+}
+.cg-wrap cg-board square.selected {
+  background-color: var(--pt-amber-soft);
+}
+.cg-wrap cg-board square.last-move {
+  background-color: rgba(199, 127, 58, 0.25);
+}

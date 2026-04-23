@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/current-user";
+import { ReviewEditor } from "@/components/scan/ReviewEditor";
+import type { ExtractedMovePair } from "@/lib/scanner/types";
 
 type RawOcrShape = {
   data?: {
@@ -29,55 +31,18 @@ export default async function ScanReviewPage({
   }
 
   const raw = scan.raw_ocr_json as RawOcrShape | null;
-  const moves = raw?.data?.moves ?? [];
+  const pairs: ExtractedMovePair[] = raw?.data?.moves ?? [];
+
+  let sheetUrl: string | null = null;
+  const firstKey = scan.image_paths[0];
+  if (firstKey) {
+    const { data: signed } = await supabase.storage
+      .from("scoresheets")
+      .createSignedUrl(firstKey, 600);
+    sheetUrl = signed?.signedUrl ?? null;
+  }
 
   return (
-    <main style={{ padding: 40, maxWidth: 720, margin: "0 auto" }}>
-      <div
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          color: "var(--pt-text-muted)",
-          marginBottom: 8,
-        }}
-      >
-        PawnTrail · Review (Group A placeholder)
-      </div>
-      <h1 style={{ fontSize: 22, fontWeight: 500, marginBottom: 16 }}>
-        Parsed {moves.length} moves
-      </h1>
-      <pre
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 12,
-          padding: 16,
-          border: "0.5px solid var(--pt-border)",
-          borderRadius: 6,
-          background: "var(--pt-bg-elev)",
-          overflow: "auto",
-          margin: 0,
-        }}
-      >
-        {moves
-          .map(
-            (m) =>
-              `${m.moveNumber}. ${m.white}${m.black ? " " + m.black : ""}`,
-          )
-          .join("\n")}
-      </pre>
-      <p
-        style={{
-          fontSize: 12,
-          color: "var(--pt-text-dim)",
-          marginTop: 24,
-          fontStyle: "italic",
-          fontFamily: "var(--font-serif)",
-        }}
-      >
-        Board + flagged-move editing lands in Group B.
-      </p>
-    </main>
+    <ReviewEditor scanId={scanId} initialPairs={pairs} sheetUrl={sheetUrl} />
   );
 }

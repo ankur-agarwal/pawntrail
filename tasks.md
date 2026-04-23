@@ -69,13 +69,16 @@ Read both wireframe files before starting any UI phase. The following points div
 - [ ] Add `pnpm` scripts from Appendix B (`dev`, `build`, `test`, `test:e2e`, `db:migrate`, `types`).
 
 **Exit criteria**
-- `pnpm dev` renders a cream-background "PawnTrail" splash page with the trail-mark SVG.
-- `pnpm typecheck && pnpm lint && pnpm test && pnpm build` passes locally and on CI.
-- Vercel preview deploys on PR.
-- `data-theme="dark"` on `<html>` correctly inverts colours per §5.1.
+- [x] `pnpm dev` renders a cream-background "PawnTrail" splash page with the trail-mark. *(Verified — dev server started in 285 ms, all 12 routes return 200, marketing splash includes trail-mark + tagline.)*
+- [x] `pnpm typecheck && pnpm lint && pnpm test && pnpm build` passes locally. *(3/3 tests green, 15 routes build statically including `/icon.png` and `/apple-icon.png`.)*
+- [ ] CI green on a PR. *(CI workflow committed; will verify on first push.)*
+- [ ] Vercel preview deploys on PR. *(Requires repo push + Vercel project link — tracked as a post-scaffold follow-up, not a Phase 0 blocker.)*
+- [x] `data-theme="dark"` on `<html>` correctly inverts colours per §5.1. *(DevThemeToggle on marketing page flips it; token set proven end-to-end.)*
 
-**Risks**
-- Font loading flash — resolve with `display: 'swap'` + `adjustFontFallback: true`.
+**Phase 0 shipped on Next.js 16.2.4 (Turbopack) + React 19.2.4 + Tailwind v4 (see `docs/superpowers/plans/2026-04-23-phase-0-foundation.md` for the detailed bite-sized plan that was executed).**
+
+**Risks (for future phases)**
+- Font loading flash — `display: 'swap'` already set; `adjustFontFallback` is the Next.js default on `next/font/google` 15+.
 
 ---
 

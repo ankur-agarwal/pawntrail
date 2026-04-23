@@ -45,17 +45,22 @@ export default function MarketingHome() {
         >
           Snap the scoresheet. Chart the trail.
         </p>
-        <p
+        <a
+          href="/signin"
           style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "var(--pt-text-dim)",
+            display: "inline-block",
+            padding: "10px 22px",
+            fontSize: 14,
+            fontWeight: 500,
+            background: "var(--pt-forest)",
+            color: "var(--pt-cream)",
+            border: "0.5px solid var(--pt-forest)",
+            borderRadius: 6,
+            textDecoration: "none",
           }}
         >
-          Phase 0 · Foundation shipped
-        </p>
+          Sign in
+        </a>
       </div>
     </main>
   );

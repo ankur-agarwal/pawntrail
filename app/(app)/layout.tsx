@@ -1,3 +1,10 @@
-export default function Layout({ children }: { children: React.ReactNode }) {
+import { requireUser } from "@/lib/supabase/current-user";
+
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  await requireUser();
   return <>{children}</>;
 }

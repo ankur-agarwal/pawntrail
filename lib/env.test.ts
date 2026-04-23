@@ -46,3 +46,47 @@ describe("loadPublicEnv", () => {
     expect(env.NEXT_PUBLIC_APP_URL).toBe("http://localhost:3000");
   });
 });
+
+describe("loadServerEnv", () => {
+  const original = { ...process.env };
+
+  beforeEach(() => {
+    process.env = { ...original };
+  });
+
+  afterEach(() => {
+    process.env = original;
+  });
+
+  it("throws when SUPABASE_SERVICE_ROLE_KEY is missing", async () => {
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.PT_EXTRACTOR_URL = "mock";
+    const { loadServerEnv } = await import("./env");
+    expect(() => loadServerEnv()).toThrow(/SUPABASE_SERVICE_ROLE_KEY/);
+  });
+
+  it("throws when PT_EXTRACTOR_URL is missing", async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "srk";
+    delete process.env.PT_EXTRACTOR_URL;
+    const { loadServerEnv } = await import("./env");
+    expect(() => loadServerEnv()).toThrow(/PT_EXTRACTOR_URL/);
+  });
+
+  it("defaults PT_SCANNER_BACKEND to 'llm'", async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "srk";
+    process.env.PT_EXTRACTOR_URL = "https://knightvision.example.com";
+    delete process.env.PT_SCANNER_BACKEND;
+    const { loadServerEnv } = await import("./env");
+    expect(loadServerEnv().PT_SCANNER_BACKEND).toBe("llm");
+  });
+
+  it("accepts 'mock' as PT_EXTRACTOR_URL (dev shortcut)", async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "srk";
+    process.env.PT_EXTRACTOR_URL = "mock";
+    process.env.PT_SCANNER_BACKEND = "mock";
+    const { loadServerEnv } = await import("./env");
+    const env = loadServerEnv();
+    expect(env.PT_EXTRACTOR_URL).toBe("mock");
+    expect(env.PT_SCANNER_BACKEND).toBe("mock");
+  });
+});

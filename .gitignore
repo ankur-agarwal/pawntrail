@@ -25,3 +25,6 @@ coverage/
 # editor
 .vscode/
 .idea/
+
+# claude code local state
+.claude/

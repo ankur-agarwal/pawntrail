@@ -7,7 +7,6 @@ import {
   deleteAccount,
 } from "./actions";
 import { ExportGamesButton } from "@/components/settings/ExportGamesButton";
-import { signOut } from "@/app/(auth)/actions";
 
 type SearchParams = { error?: string; saved?: string };
 
@@ -216,11 +215,6 @@ export default async function SettingsPage({
         </div>
       </Section>
 
-      <Section title="Session">
-        <form action={signOut}>
-          <SmallButton variant="ghost">Sign out</SmallButton>
-        </form>
-      </Section>
     </main>
   );
 }

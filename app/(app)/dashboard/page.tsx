@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/current-user";
-import { signOut } from "@/app/(auth)/actions";
 import type { Game } from "@/lib/supabase/helpers";
 
 function cutoffThirtyDaysAgo(): number {
@@ -105,25 +104,6 @@ export default async function DashboardPage() {
         <RecentList games={games.slice(0, 5)} />
       </div>
 
-      <form action={signOut} style={{ marginTop: 40 }}>
-        <button
-          type="submit"
-          style={{
-            padding: "6px 14px",
-            fontSize: 11,
-            fontFamily: "var(--font-mono)",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            background: "transparent",
-            color: "var(--pt-text)",
-            border: "0.5px solid var(--pt-border-strong)",
-            borderRadius: 4,
-            cursor: "pointer",
-          }}
-        >
-          Sign out
-        </button>
-      </form>
     </main>
   );
 }
@@ -403,25 +383,6 @@ function EmptyDashboard({ name }: { name: string }) {
       >
         Scan your first game
       </Link>
-      <form action={signOut} style={{ marginTop: 12 }}>
-        <button
-          type="submit"
-          style={{
-            padding: "6px 14px",
-            fontSize: 11,
-            fontFamily: "var(--font-mono)",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            background: "transparent",
-            color: "var(--pt-text-muted)",
-            border: "0.5px solid var(--pt-border)",
-            borderRadius: 4,
-            cursor: "pointer",
-          }}
-        >
-          Sign out
-        </button>
-      </form>
     </main>
   );
 }

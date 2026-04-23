@@ -184,7 +184,7 @@ export type Database = {
           email: string | null
           id: string
           lichess_username: string | null
-          phone: string
+          phone: string | null
           plan: string
           scan_quota_limit: number
           scan_quota_used: number
@@ -199,7 +199,7 @@ export type Database = {
           email?: string | null
           id: string
           lichess_username?: string | null
-          phone: string
+          phone?: string | null
           plan?: string
           scan_quota_limit?: number
           scan_quota_used?: number
@@ -214,7 +214,7 @@ export type Database = {
           email?: string | null
           id?: string
           lichess_username?: string | null
-          phone?: string
+          phone?: string | null
           plan?: string
           scan_quota_limit?: number
           scan_quota_used?: number

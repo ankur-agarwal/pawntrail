@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "data": {
+    "moves": [
+      { "moveNumber": 1, "white": "e4", "black": "e5" },
+      { "moveNumber": 2, "white": "Nf3", "black": "Nc6" },
+      { "moveNumber": 3, "white": "Bb5", "black": "a6" },
+      { "moveNumber": 4, "white": "Ba4", "black": "Nf6" },
+      { "moveNumber": 5, "white": "O-O", "black": "Be7" },
+      { "moveNumber": 6, "white": "Re1", "black": "b5" },
+      { "moveNumber": 7, "white": "Bb3", "black": "d6" },
+      { "moveNumber": 8, "white": "c3", "black": "O-O" },
+      { "moveNumber": 9, "white": "h3", "black": "Nb8" },
+      { "moveNumber": 10, "white": "d4", "black": "Nbd7" },
+      { "moveNumber": 11, "white": "Nbd2", "black": "Bb7" },
+      { "moveNumber": 12, "white": "Bc2", "black": "Re8" },
+      { "moveNumber": 13, "white": "Qe2", "black": "Bf8" },
+      { "moveNumber": 14, "white": "Nf1", "black": "h6" }
+    ],
+    "totalSheets": 1,
+    "_metadata": {
+      "model": "mock",
+      "fallbackUsed": false,
+      "timestamp": "2026-04-23T12:00:00.000Z"
+    }
+  }
+}

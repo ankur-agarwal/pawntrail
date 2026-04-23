@@ -1,5 +1,9 @@
 # PawnTrail — Phased Implementation Plan
 
+> **Status as of 2026-04-23:** Phases 0 → 11 shipped end-to-end (billing is Stripe-keys-pending scaffold). Phase 12 (polish) and Phase 13 (launch cutover) remain. See commit history for granular progress.
+
+
+
 > Companion to `PRD-v1-detailed.md`. The PRD is authoritative for schemas, code snippets, and acceptance criteria; this file sequences the work. Section references (§) point at the PRD unless marked otherwise.
 >
 > **For agentic workers:** expand any single phase into a bite-sized TDD plan (via the `superpowers:writing-plans` skill) before executing it.

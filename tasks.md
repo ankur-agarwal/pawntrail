@@ -104,9 +104,15 @@ Read both wireframe files before starting any UI phase. The following points div
   - Quota trigger increments `scan_quota_used` on `status → saved` once (idempotent).
 
 **Exit criteria**
-- `pnpm test:rls` passes.
-- Apply migrations to staging project; confirm via Supabase SQL editor that policies exist.
-- Types in `lib/supabase/types.ts` match schema.
+- [ ] `pnpm test:rls` passes. *(Deferred to Phase 2 — RLS tests land alongside the auth flow that exercises them.)*
+- [x] Apply migrations to remote; policies visible in Studio. *(5 migrations applied to `pawntrail` project via `supabase db push`.)*
+- [x] Types in `lib/supabase/types.ts` match schema. *(Regenerated via `supabase gen types typescript --linked --schema public`; all 5 tables present.)*
+
+**Phase 1 shipped. Decisions applied in-flight (differ from PRD — track in PRD deltas):**
+- Reordered schema: `profiles → scans → games → moves → billing_events` to fix the PRD's forward-FK bug.
+- `scans.image_paths TEXT[]` (not `image_path TEXT`) per wireframes-review item 1.
+- Switched all UUID defaults from `uuid_generate_v4()` (uuid-ossp) to `gen_random_uuid()` (built-in on Supabase — no cross-schema resolution needed).
+- `Database` type wired into all three Supabase clients so queries are end-to-end type-safe.
 
 **Risks**
 - Circular FK: `games.scan_id → scans.id` and `scans.user_id → profiles.id`. PRD creates `games` before `scans` textually — correct by splitting the FK add-constraint into migration 0001 after both tables exist, or by ordering `scans` before `games`. Decide in the migration; don't let Postgres fail on apply.

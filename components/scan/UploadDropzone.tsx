@@ -4,7 +4,6 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { compressImage, MAX_UPLOAD_BYTES } from "@/lib/images/compress";
 import { createScan, runScanner } from "@/app/(app)/scan/actions";
-import { PaywallModal } from "@/components/scan/PaywallModal";
 
 type Phase =
   | "idle"
@@ -14,18 +13,11 @@ type Phase =
   | "done"
   | "error";
 
-export function UploadDropzone({
-  quotaUsed,
-  quotaLimit,
-}: {
-  quotaUsed: number;
-  quotaLimit: number;
-}) {
+export function UploadDropzone() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [paywallOpen, setPaywallOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   async function handleFile(file: File) {
@@ -51,11 +43,6 @@ export function UploadDropzone({
 
     const created = await createScan(fd);
     if (!created.ok) {
-      if (created.code === "quota_exceeded") {
-        setPhase("idle");
-        setPaywallOpen(true);
-        return;
-      }
       setErrorMessage(created.error);
       setPhase("error");
       return;
@@ -154,19 +141,7 @@ export function UploadDropzone({
         </div>
       )}
 
-      <div
-        style={{
-          marginTop: 24,
-          fontSize: 11,
-          color: "var(--pt-text-muted)",
-          fontFamily: "var(--font-mono)",
-        }}
-      >
-        {quotaUsed} / {quotaLimit} free scans used
-      </div>
-
       <Tips />
-      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} />
     </div>
   );
 }

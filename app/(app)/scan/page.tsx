@@ -2,9 +2,7 @@ import { requireUser } from "@/lib/supabase/current-user";
 import { UploadDropzone } from "@/components/scan/UploadDropzone";
 
 export default async function ScanPage() {
-  const { profile } = await requireUser();
-  const quotaUsed = profile?.scan_quota_used ?? 0;
-  const quotaLimit = profile?.scan_quota_limit ?? 15;
+  await requireUser();
 
   return (
     <main
@@ -41,7 +39,7 @@ export default async function ScanPage() {
       >
         Snap a photo. We&apos;ll read the moves off the sheet.
       </p>
-      <UploadDropzone quotaUsed={quotaUsed} quotaLimit={quotaLimit} />
+      <UploadDropzone />
     </main>
   );
 }

@@ -136,16 +136,27 @@ Read both wireframe files before starting any UI phase. The following points div
 - [ ] Unit tests: phone normalisation, OTP paste-split logic, resend-timer state machine.
 - [ ] Playwright e2e: happy path sign-in (mock Supabase Auth via test-mode OTP) → lands on `/dashboard`.
 
-**Exit criteria (§8.5 verbatim)**
-- Phone OTP sign-in creates a `profiles` row.
-- Session cookie is httpOnly + Secure in prod.
-- `/app/(app)/*` unreachable without session.
-- "Change number" on `/verify` clears draft and returns to `/signin`.
-- OTP paste splits across the 6 boxes.
+**Exit criteria (updated — PRD §8 auth flow pivoted to Google OAuth + email magic link):**
+- [x] Google OAuth + email magic-link sign-in both create a `profiles` row (via `handle_new_user` trigger which now captures `display_name` from OAuth metadata).
+- [x] Session cookie is httpOnly + Secure in prod; refresh token lives for 1 year (Supabase dashboard setting).
+- [x] `/(app)/*` unreachable without session (`proxy.ts` redirects to `/signin?redirect=<path>`; `(app)/layout.tsx` double-checks).
+- [x] `/signin` renders Google button + email form + error alert.
+- [x] `/verify` renders "Check your email" with masked address.
+- [x] Sign-out revokes session + redirects to `/`.
+- [x] `/setup` route dropped (no onboarding step for v1).
+- [ ] Lichess pairing modal — deferred to Phase 10 (Settings).
+- [ ] Playwright e2e — deferred to Phase 12 polish pass.
+- [ ] RLS integration tests — deferred to Phase 3 (first phase with cross-user data writes).
 
-**Risks**
-- Supabase rate limits (§8.4) — exercise resend UX with throttle surfaced clearly.
-- Session refresh loop in middleware — test expired-token case explicitly.
+**Phase 2 shipped. Decisions applied in-flight (differ from PRD — add to deltas):**
+- Auth: phone OTP → Google OAuth + email magic link (product decision; DLT / Twilio friction not worth it for v1).
+- Dropped `/setup` route entirely; first-time users go straight to `/dashboard`.
+- Used Next.js 16's new `proxy.ts` convention (file + exported `proxy` function) instead of the deprecated `middleware.ts` + `middleware` export.
+- Refresh token lifetime bumped from Supabase default (30 days) to 1 year via dashboard setting.
+
+**Risks (for future phases)**
+- Supabase rate limits still apply to email magic-link sends; exercise in Phase 12.
+- OAuth consent screen is "External" but unverified — first-time Google users see the "unverified app" warning. Acceptable for dev; schedule Google verification before launch (Phase 13).
 
 ---
 

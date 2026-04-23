@@ -1,7 +1,15 @@
+import { redirect } from "next/navigation";
 import { TrailMark } from "@/components/brand/TrailMark";
-import { DevThemeToggle } from "@/components/dev/DevThemeToggle";
+import { SigninForm } from "@/components/auth/SigninForm";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default function MarketingHome() {
+export default async function Home() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) redirect("/dashboard");
+
   return (
     <main
       style={{
@@ -10,57 +18,28 @@ export default function MarketingHome() {
         placeItems: "center",
         padding: 24,
         background: "var(--pt-bg)",
-        color: "var(--pt-text)",
       }}
     >
-      <DevThemeToggle />
-      <div style={{ textAlign: "center", maxWidth: 480 }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 400,
+          padding: "36px 36px 28px",
+          border: "0.5px solid var(--pt-border-strong)",
+          borderRadius: 12,
+          background: "var(--pt-bg-elev)",
+        }}
+      >
         <div
           style={{
             display: "flex",
             justifyContent: "center",
-            marginBottom: 16,
+            marginBottom: 18,
           }}
         >
-          <TrailMark size={72} />
+          <TrailMark size={64} />
         </div>
-        <h1
-          style={{
-            fontSize: 28,
-            fontWeight: 500,
-            margin: "0 0 10px",
-            letterSpacing: "0.02em",
-          }}
-        >
-          PawnTrail
-        </h1>
-        <p
-          style={{
-            fontFamily: "var(--font-serif)",
-            fontStyle: "italic",
-            fontSize: 18,
-            color: "var(--pt-text-muted)",
-            margin: "0 0 24px",
-          }}
-        >
-          Snap the scoresheet. Chart the trail.
-        </p>
-        <a
-          href="/signin"
-          style={{
-            display: "inline-block",
-            padding: "10px 22px",
-            fontSize: 14,
-            fontWeight: 500,
-            background: "var(--pt-forest)",
-            color: "var(--pt-cream)",
-            border: "0.5px solid var(--pt-forest)",
-            borderRadius: 6,
-            textDecoration: "none",
-          }}
-        >
-          Sign in
-        </a>
+        <SigninForm showTagline />
       </div>
     </main>
   );

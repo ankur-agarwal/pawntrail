@@ -13,7 +13,9 @@ const emailSchema = z.object({
 export async function signInWithGoogle(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const env = loadPublicEnv();
-  const next = (formData.get("redirect") as string | null) ?? "/dashboard";
+  const raw = formData.get("redirect");
+  const next =
+    typeof raw === "string" && raw.length > 0 ? raw : "/dashboard";
   const callbackUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -42,7 +44,10 @@ export async function signInWithEmail(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const env = loadPublicEnv();
-  const next = parsed.data.redirect ?? "/dashboard";
+  const next =
+    parsed.data.redirect && parsed.data.redirect.length > 0
+      ? parsed.data.redirect
+      : "/dashboard";
   const callbackUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`;
 
   const { error } = await supabase.auth.signInWithOtp({

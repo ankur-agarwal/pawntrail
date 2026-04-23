@@ -10,8 +10,8 @@ describe("replayMoves", () => {
     ]);
     expect(plies).toHaveLength(4);
     expect(plies.every((p) => !p.invalid)).toBe(true);
-    expect(plies[0].side).toBe("w");
-    expect(plies[1].side).toBe("b");
+    expect(plies[0]!.side).toBe("w");
+    expect(plies[1]!.side).toBe("b");
   });
 
   it("flags an illegal move + halts downstream validation", () => {
@@ -19,14 +19,14 @@ describe("replayMoves", () => {
       { moveNumber: 1, white: "e4", black: "e5" },
       { moveNumber: 2, white: "Nz9", black: "Nc6" },
     ]);
-    expect(plies[2].invalid).toBe(true);
-    expect(plies[3].invalid).toBe(true);
+    expect(plies[2]!.invalid).toBe(true);
+    expect(plies[3]!.invalid).toBe(true);
   });
 
   it("handles games ending on a white move (no black)", () => {
     const plies = replayMoves([{ moveNumber: 1, white: "e4" }]);
     expect(plies).toHaveLength(1);
-    expect(plies[0].invalid).toBe(false);
+    expect(plies[0]!.invalid).toBe(false);
   });
 });
 

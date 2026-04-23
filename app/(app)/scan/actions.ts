@@ -7,6 +7,8 @@ import type { Scan } from "@/lib/supabase/helpers";
 import type { Database } from "@/lib/supabase/types";
 
 type Json = Database["public"]["Tables"]["scans"]["Row"]["raw_ocr_json"];
+type RpcArgs = Database["public"]["Functions"]["save_scan_as_game"]["Args"];
+type RpcJson = RpcArgs["p_game_input"];
 
 type Result<T> =
   | { ok: true; data: T }
@@ -125,4 +127,43 @@ export async function getScanStatus(
     .maybeSingle();
   if (error || !data) return { ok: false, error: "scan_not_found" };
   return { ok: true, data };
+}
+
+export interface SavedMove {
+  ply: number;
+  san: string;
+  fen_after: string;
+}
+
+export interface GameMetadataInput {
+  played_on?: string; // yyyy-mm-dd
+  opponent_name?: string;
+  opponent_rating?: number | string;
+  color: "white" | "black";
+  result: "win" | "loss" | "draw" | "unknown";
+  time_control?: string;
+  tournament_name?: string;
+  round?: string;
+  pgn: string;
+  scan_confidence?: number | string;
+  eco_code?: string;
+  opening_name?: string;
+}
+
+export async function saveScanAsGame(
+  scanId: string,
+  meta: GameMetadataInput,
+  moves: SavedMove[],
+): Promise<Result<{ gameId: string }>> {
+  await requireUser();
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.rpc("save_scan_as_game", {
+    p_scan_id: scanId,
+    p_game_input: meta as unknown as RpcJson,
+    p_moves: moves as unknown as RpcJson,
+  });
+
+  if (error || !data) return { ok: false, error: error?.message ?? "save_failed" };
+  return { ok: true, data: { gameId: data } };
 }

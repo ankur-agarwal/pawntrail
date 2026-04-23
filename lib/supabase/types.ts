@@ -271,7 +271,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      save_scan_as_game: {
+        Args: { p_game_input: Json; p_moves: Json; p_scan_id: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

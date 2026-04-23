@@ -4,11 +4,18 @@ import { requireUser } from "@/lib/supabase/current-user";
 import { signOut } from "@/app/(auth)/actions";
 import type { Game } from "@/lib/supabase/helpers";
 
+function cutoffThirtyDaysAgo(): number {
+  return Date.now() - 30 * 86400 * 1000;
+}
+
 export default async function DashboardPage() {
   const { userId, profile } = await requireUser();
   const name = profile?.display_name ?? "Trail walker";
 
   const supabase = await createSupabaseServerClient();
+
+  const thirtyDaysAgoMs = cutoffThirtyDaysAgo();
+  const thirtyDaysAgoIso = new Date(thirtyDaysAgoMs).toISOString().slice(0, 10);
 
   const [{ data: allGames }, { count: thirtyDayCount }] = await Promise.all([
     supabase
@@ -22,18 +29,13 @@ export default async function DashboardPage() {
       .from("games")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .gte(
-        "played_on",
-        new Date(Date.now() - 30 * 86400 * 1000).toISOString().slice(0, 10),
-      ),
+      .gte("played_on", thirtyDaysAgoIso),
   ]);
 
   const games: Game[] = allGames ?? [];
   const totalGames = games.length;
   const last30 = games.filter(
-    (g) =>
-      g.played_on &&
-      new Date(g.played_on).getTime() > Date.now() - 30 * 86400 * 1000,
+    (g) => g.played_on && new Date(g.played_on).getTime() > thirtyDaysAgoMs,
   );
   const winsLast30 = last30.filter((g) => g.result === "win").length;
   const winRate = last30.length > 0 ? Math.round((winsLast30 / last30.length) * 100) : null;

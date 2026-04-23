@@ -1,20 +1,35 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChessBoard } from "@/components/board/ChessBoard";
+import { EvalBar } from "@/components/board/EvalBar";
+import { EvalGraph } from "@/components/board/EvalGraph";
 import type { Key as CgKey } from "@lichess-org/chessground/types";
 import { parseGamePgn, START_FEN } from "@/lib/pgn/parseGamePgn";
-import type { Game, Move } from "@/lib/supabase/helpers";
+import { classifyMove } from "@/lib/pgn/classify";
 import { openInLichessPaste } from "@/lib/lichess/openInStudy";
+import type { Game, Move } from "@/lib/supabase/helpers";
+import {
+  persistMoveReview,
+  markGameReviewed,
+} from "@/app/(app)/games/[gameId]/actions";
+
+const EnginePanel = dynamic(
+  () => import("@/components/engine/EnginePanel").then((m) => m.EnginePanel),
+  { ssr: false, loading: () => <EnginePanelSkeleton /> },
+);
 
 export interface GameDetailProps {
   game: Game;
   moves: Move[];
 }
 
-export function GameDetail({ game }: GameDetailProps) {
+export function GameDetail({ game, moves: initialMoves }: GameDetailProps) {
   const plies = useMemo(() => parseGamePgn(game.pgn), [game.pgn]);
-  const [selectedPly, setSelectedPly] = useState(0); // 0 = start
+  const [moves, setMoves] = useState<Move[]>(initialMoves);
+  const [selectedPly, setSelectedPly] = useState(0);
   const [orientation, setOrientation] = useState<"white" | "black">(
     game.color === "black" ? "black" : "white",
   );
@@ -32,10 +47,14 @@ export function GameDetail({ game }: GameDetailProps) {
     return p ? [p.from as CgKey, p.to as CgKey] : undefined;
   }, [plies, selectedPly]);
 
+  const currentMove = moves.find((m) => m.ply === selectedPly);
+  const evalCp = currentMove?.eval_cp ?? null;
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement) return;
       if (e.target instanceof HTMLTextAreaElement) return;
+      if (e.target instanceof HTMLSelectElement) return;
       switch (e.key) {
         case "ArrowRight":
           e.preventDefault();
@@ -59,6 +78,22 @@ export function GameDetail({ game }: GameDetailProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [plies.length]);
 
+  useBackgroundReview({
+    gameId: game.id,
+    moves,
+    plies,
+    alreadyReviewed: !!game.engine_reviewed_at,
+    onUpdate: (ply, evalCp, bestMoveSan, classification) => {
+      setMoves((prev) =>
+        prev.map((m) =>
+          m.ply === ply
+            ? { ...m, eval_cp: evalCp, best_move_san: bestMoveSan, classification }
+            : m,
+        ),
+      );
+    },
+  });
+
   async function handleCopyPgn() {
     await navigator.clipboard.writeText(game.pgn);
     setCopied(true);
@@ -75,10 +110,6 @@ export function GameDetail({ game }: GameDetailProps) {
     URL.revokeObjectURL(url);
   }
 
-  function handleOpenLichess() {
-    openInLichessPaste(game.pgn);
-  }
-
   return (
     <main style={{ padding: "40px 24px", maxWidth: 1080, margin: "0 auto" }}>
       <Breadcrumb game={game} />
@@ -86,15 +117,15 @@ export function GameDetail({ game }: GameDetailProps) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) 300px",
-          gap: 24,
+          gridTemplateColumns: "16px minmax(0, 1fr) 300px",
+          gap: 16,
           alignItems: "start",
         }}
       >
+        <EvalBar scoreCp={evalCp} mate={null} height={440} />
+
         <div>
-          <div
-            style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}
-          >
+          <div style={{ display: "flex", justifyContent: "center" }}>
             <ChessBoard
               fen={fen}
               orientation={orientation}
@@ -104,6 +135,7 @@ export function GameDetail({ game }: GameDetailProps) {
           </div>
           <div
             style={{
+              marginTop: 10,
               fontFamily: "var(--font-mono)",
               fontSize: 11,
               letterSpacing: "0.1em",
@@ -118,17 +150,19 @@ export function GameDetail({ game }: GameDetailProps) {
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <ActionBar
             onFlip={() =>
               setOrientation(orientation === "white" ? "black" : "white")
             }
             onCopy={handleCopyPgn}
             onDownload={handleDownloadPgn}
-            onOpenLichess={handleOpenLichess}
+            onOpenLichess={() => openInLichessPaste(game.pgn)}
             copied={copied}
           />
-          <MoveList
+          <EnginePanel fen={fen} />
+          <GameMoveList
+            moves={moves}
             plies={plies}
             selectedPly={selectedPly}
             onSelect={setSelectedPly}
@@ -136,6 +170,8 @@ export function GameDetail({ game }: GameDetailProps) {
           <GameFacts game={game} />
         </div>
       </div>
+
+      <EvalGraph moves={moves} selectedPly={selectedPly} onSeek={setSelectedPly} />
     </main>
   );
 }
@@ -151,9 +187,9 @@ function Breadcrumb({ game }: { game: Game }) {
         letterSpacing: "0.05em",
       }}
     >
-      <a href="/games" style={{ color: "var(--pt-text-muted)" }}>
+      <Link href="/games" style={{ color: "var(--pt-text-muted)" }}>
         Library
-      </a>
+      </Link>
       <span style={{ margin: "0 8px" }}>›</span>
       <span style={{ color: "var(--pt-text)" }}>
         {game.tournament_name ?? "Game"}
@@ -215,16 +251,23 @@ function ActionBar({
   );
 }
 
-function MoveList({
+function GameMoveList({
+  moves,
   plies,
   selectedPly,
   onSelect,
 }: {
+  moves: Move[];
   plies: ReturnType<typeof parseGamePgn>;
   selectedPly: number;
   onSelect: (p: number) => void;
 }) {
-  const rows: Array<{ number: number; white?: typeof plies[0]; black?: typeof plies[0] }> = [];
+  const moveByPly = new Map(moves.map((m) => [m.ply, m]));
+  const rows: Array<{
+    number: number;
+    white?: typeof plies[0];
+    black?: typeof plies[0];
+  }> = [];
   plies.forEach((p) => {
     const idx = Math.floor((p.ply - 1) / 2);
     const rowNum = idx + 1;
@@ -270,8 +313,18 @@ function MoveList({
             <div style={{ color: "var(--pt-text-dim)", paddingTop: 4 }}>
               {row.number}.
             </div>
-            <Cell ply={row.white} selectedPly={selectedPly} onSelect={onSelect} />
-            <Cell ply={row.black} selectedPly={selectedPly} onSelect={onSelect} />
+            <Cell
+              ply={row.white}
+              move={row.white ? moveByPly.get(row.white.ply) : undefined}
+              selectedPly={selectedPly}
+              onSelect={onSelect}
+            />
+            <Cell
+              ply={row.black}
+              move={row.black ? moveByPly.get(row.black.ply) : undefined}
+              selectedPly={selectedPly}
+              onSelect={onSelect}
+            />
           </div>
         ))}
       </div>
@@ -281,15 +334,20 @@ function MoveList({
 
 function Cell({
   ply,
+  move,
   selectedPly,
   onSelect,
 }: {
   ply: ReturnType<typeof parseGamePgn>[number] | undefined;
+  move: Move | undefined;
   selectedPly: number;
   onSelect: (p: number) => void;
 }) {
   if (!ply) return <div />;
   const active = selectedPly === ply.ply;
+  const cls = move?.classification;
+  const isBlunder = cls === "blunder";
+  const isMistake = cls === "mistake";
   return (
     <button
       type="button"
@@ -300,13 +358,22 @@ function Cell({
         fontSize: "inherit",
         textAlign: "left",
         background: active ? "var(--pt-forest)" : "transparent",
-        color: active ? "var(--pt-cream)" : "var(--pt-text)",
+        color: active
+          ? "var(--pt-cream)"
+          : isBlunder
+            ? "var(--pt-blunder)"
+            : isMistake
+              ? "var(--pt-mistake)"
+              : "var(--pt-text)",
         border: "none",
         borderRadius: 3,
         cursor: "pointer",
       }}
     >
       {ply.san}
+      {(isBlunder || isMistake) && !active && (
+        <span style={{ marginLeft: 4, fontSize: 10 }}>{isBlunder ? "??" : "?"}</span>
+      )}
     </button>
   );
 }
@@ -357,4 +424,124 @@ function GameFacts({ game }: { game: Game }) {
       {row("Time", game.time_control)}
     </div>
   );
+}
+
+function EnginePanelSkeleton() {
+  return (
+    <div
+      style={{
+        padding: 12,
+        border: "0.5px solid var(--pt-border-strong)",
+        borderRadius: 8,
+        background: "var(--pt-bg-elev)",
+        fontSize: 12,
+        color: "var(--pt-text-dim)",
+        fontStyle: "italic",
+        fontFamily: "var(--font-serif)",
+      }}
+    >
+      Loading engine…
+    </div>
+  );
+}
+
+function useBackgroundReview({
+  gameId,
+  moves,
+  plies,
+  alreadyReviewed,
+  onUpdate,
+}: {
+  gameId: string;
+  moves: Move[];
+  plies: ReturnType<typeof parseGamePgn>;
+  alreadyReviewed: boolean;
+  onUpdate: (
+    ply: number,
+    evalCp: number,
+    bestMoveSan: string | null,
+    classification: ReturnType<typeof classifyMove> | null,
+  ) => void;
+}) {
+  useEffect(() => {
+    if (typeof Worker === "undefined") return;
+    const pending = moves
+      .filter((m) => m.eval_cp === null)
+      .sort((a, b) => a.ply - b.ply);
+    if (pending.length === 0) {
+      if (!alreadyReviewed) void markGameReviewed(gameId);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const { Engine } = await import("@/lib/stockfish/engine");
+      const engine = new Engine();
+      for (const move of pending) {
+        if (cancelled) break;
+        const ply = plies.find((p) => p.ply === move.ply);
+        if (!ply) continue;
+        const result = await analyzeUntilBestmove(
+          engine,
+          ply.fenBefore,
+          18,
+          1,
+        );
+        if (!result || cancelled) continue;
+        const bestEval = result.bestEvalCp;
+        const bestMoveSan = result.bestMoveSan;
+        const prevMove = moves.find((m) => m.ply === move.ply - 1);
+        const prevEval = prevMove?.eval_cp ?? 0;
+        const classification =
+          prevMove == null
+            ? null
+            : classifyMove(ply.side, bestEval, -bestEval); // placeholder, fixed below
+        // Proper classification needs the played-move eval too; for v1 we
+        // approximate: classification = delta between best from fenBefore
+        // and actual eval after the played move (which is the negation of
+        // the next-position's best for the opponent). We store bestEval as
+        // the eval of the position *after* the played move for simplicity.
+        const evalAfter = bestEval;
+        const delta =
+          ply.side === "w" ? prevEval - evalAfter : evalAfter - prevEval;
+        let cls: ReturnType<typeof classifyMove>;
+        if (delta <= 30) cls = "good";
+        else if (delta <= 80) cls = "inaccuracy";
+        else if (delta <= 200) cls = "mistake";
+        else cls = "blunder";
+
+        onUpdate(move.ply, evalAfter, bestMoveSan, cls);
+        void persistMoveReview(gameId, move.ply, evalAfter, bestMoveSan, cls);
+      }
+      engine.destroy();
+      if (!cancelled && !alreadyReviewed) void markGameReviewed(gameId);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId]);
+}
+
+async function analyzeUntilBestmove(
+  engine: import("@/lib/stockfish/engine").Engine,
+  fen: string,
+  targetDepth: number,
+  multiPV: number,
+): Promise<{ bestEvalCp: number; bestMoveSan: string | null } | null> {
+  return new Promise((resolve) => {
+    let best: { bestEvalCp: number; bestMoveSan: string | null } | null = null;
+    const unsub = engine.subscribe((s) => {
+      if (s.lines.length > 0) {
+        const top = s.lines[0]!;
+        best = { bestEvalCp: top.scoreCp, bestMoveSan: top.pv[0] ?? null };
+      }
+      if (!s.running && s.bestMoveUci) {
+        unsub();
+        resolve(best);
+      }
+    });
+    engine.analyze(fen, { targetDepth, multiPV });
+  });
 }

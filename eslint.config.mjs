@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "public/stockfish/**",
+    "design_handoff_pawntrail/**",
+    "handoff/**",
   ]),
 ]);
 

@@ -1,139 +1,41 @@
-import { signInWithGoogle, signInWithEmail } from "@/app/(auth)/actions";
+"use client";
+
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import {
+  signInWithEmail,
+  signInWithGoogle,
+  type EmailFormState,
+} from "@/app/(auth)/actions";
+import { Dots, GoogleG } from "./icons";
 
 export function SigninForm({
   errorMessage,
   redirectTo,
-  showTagline = false,
 }: {
   errorMessage?: string | null;
   redirectTo?: string;
-  showTagline?: boolean;
 }) {
+  const [state, formAction] = useActionState<EmailFormState, FormData>(
+    signInWithEmail,
+    null,
+  );
+
+  const inlineError = state?.error ?? errorMessage ?? null;
+
   return (
     <>
-      {showTagline && (
-        <>
-          <h1
-            style={{
-              fontSize: 26,
-              fontWeight: 500,
-              margin: 0,
-              textAlign: "center",
-              marginBottom: 8,
-            }}
-          >
-            PawnTrail
-          </h1>
-          <p
-            style={{
-              fontFamily: "var(--font-serif)",
-              fontStyle: "italic",
-              fontSize: 16,
-              color: "var(--pt-text-muted)",
-              margin: 0,
-              textAlign: "center",
-              marginBottom: 28,
-            }}
-          >
-            Snap the scoresheet. Chart the trail.
-          </p>
-        </>
-      )}
-      {!showTagline && (
-        <>
-          <h1
-            style={{
-              fontSize: 20,
-              fontWeight: 500,
-              margin: 0,
-              textAlign: "center",
-              marginBottom: 6,
-            }}
-          >
-            Welcome to PawnTrail
-          </h1>
-          <p
-            style={{
-              fontFamily: "var(--font-serif)",
-              fontStyle: "italic",
-              fontSize: 15,
-              color: "var(--pt-text-muted)",
-              margin: 0,
-              textAlign: "center",
-              marginBottom: 28,
-            }}
-          >
-            Snap the scoresheet. Chart the trail.
-          </p>
-        </>
-      )}
-
-      {errorMessage && (
-        <div
-          role="alert"
-          style={{
-            padding: "10px 12px",
-            borderRadius: 6,
-            background: "rgba(169, 79, 36, 0.08)",
-            border: "0.5px solid var(--pt-border-strong)",
-            color: "var(--pt-ink)",
-            fontSize: 12,
-            marginBottom: 14,
-          }}
-        >
-          {errorMessage}
-        </div>
-      )}
-
-      <form action={signInWithGoogle} style={{ marginBottom: 16 }}>
-        <input type="hidden" name="redirect" value={redirectTo ?? ""} />
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: "10px 14px",
-            fontSize: 14,
-            fontWeight: 500,
-            background: "var(--pt-forest)",
-            color: "var(--pt-cream)",
-            border: "0.5px solid var(--pt-forest)",
-            borderRadius: 6,
-            cursor: "pointer",
-          }}
-        >
-          Continue with Google
-        </button>
-      </form>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          margin: "18px 0",
-          color: "var(--pt-text-dim)",
-          fontSize: 11,
-          fontFamily: "var(--font-mono)",
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-        }}
-      >
-        <div style={{ flex: 1, height: 0.5, background: "var(--pt-border)" }} />
-        or
-        <div style={{ flex: 1, height: 0.5, background: "var(--pt-border)" }} />
-      </div>
-
-      <form action={signInWithEmail}>
+      <form action={formAction} noValidate>
         <input type="hidden" name="redirect" value={redirectTo ?? ""} />
         <label
           htmlFor="email"
           style={{
             display: "block",
+            fontFamily: "var(--font-mono)",
             fontSize: 10,
-            letterSpacing: "0.14em",
+            letterSpacing: "0.12em",
             textTransform: "uppercase",
             color: "var(--pt-text-muted)",
-            fontFamily: "var(--font-mono)",
             marginBottom: 6,
           }}
         >
@@ -145,40 +47,54 @@ export function SigninForm({
           type="email"
           required
           autoComplete="email"
+          autoFocus
+          inputMode="email"
           placeholder="you@example.com"
+          defaultValue={state?.email ?? ""}
+          aria-invalid={inlineError ? true : undefined}
+          aria-describedby={inlineError ? "email-error" : undefined}
           style={{
             width: "100%",
-            padding: "8px 12px",
-            fontSize: 14,
-            background: "transparent",
+            height: 44,
+            padding: "0 14px",
+            fontSize: 15,
+            background: "var(--pt-surface)",
             color: "var(--pt-text)",
-            border: "0.5px solid var(--pt-border-strong)",
-            borderRadius: 6,
+            border: `0.5px solid ${inlineError ? "var(--pt-blunder)" : "var(--pt-border-strong)"}`,
+            borderRadius: "var(--pt-r-card)",
             fontFamily: "inherit",
-            marginBottom: 12,
+            outline: "none",
+            display: "block",
           }}
         />
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: "10px 14px",
-            fontSize: 14,
-            fontWeight: 500,
-            background: "transparent",
-            color: "var(--pt-text)",
-            border: "0.5px solid var(--pt-border-strong)",
-            borderRadius: 6,
-            cursor: "pointer",
-          }}
-        >
-          Send magic link
-        </button>
+        {inlineError && (
+          <div
+            id="email-error"
+            role="alert"
+            style={{
+              fontSize: 12,
+              color: "var(--pt-blunder)",
+              marginTop: 8,
+            }}
+          >
+            {inlineError}
+          </div>
+        )}
+        <div style={{ height: 12 }} />
+        <PrimaryButton />
+      </form>
+
+      <OrDivider />
+
+      <form action={signInWithGoogle}>
+        <input type="hidden" name="redirect" value={redirectTo ?? ""} />
+        <GoogleSubmit />
       </form>
 
       <p
         style={{
           fontSize: 11,
+          lineHeight: 1.6,
           color: "var(--pt-text-dim)",
           textAlign: "center",
           marginTop: 20,
@@ -188,13 +104,112 @@ export function SigninForm({
         By continuing you agree to the{" "}
         <a href="/terms" style={{ color: "var(--pt-text-muted)" }}>
           Terms
-        </a>{" "}
-        and{" "}
+        </a>
+        {" · "}
         <a href="/privacy" style={{ color: "var(--pt-text-muted)" }}>
           Privacy
         </a>
-        .
       </p>
     </>
+  );
+}
+
+function PrimaryButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      style={{
+        width: "100%",
+        height: 44,
+        padding: "0 20px",
+        fontFamily: "var(--font-sans)",
+        fontSize: 14,
+        fontWeight: 500,
+        letterSpacing: "0.01em",
+        background: "var(--pt-amber)",
+        color: "#fff",
+        border: "0.5px solid var(--pt-amber-deep)",
+        borderRadius: "var(--pt-r-card)",
+        cursor: pending ? "not-allowed" : "pointer",
+        opacity: pending ? 0.5 : 1,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        transition: "opacity 120ms ease",
+      }}
+    >
+      {pending ? (
+        <>
+          Sending link <Dots color="#fff" size={3} />
+        </>
+      ) : (
+        "Send magic link"
+      )}
+    </button>
+  );
+}
+
+function GoogleSubmit() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      style={{
+        width: "100%",
+        height: 44,
+        padding: "0 16px",
+        fontFamily: "var(--font-sans)",
+        fontSize: 14,
+        fontWeight: 500,
+        letterSpacing: "0.01em",
+        background: "var(--pt-surface)",
+        color: "var(--pt-text)",
+        border: "0.5px solid var(--pt-border-strong)",
+        borderRadius: "var(--pt-r-card)",
+        cursor: pending ? "not-allowed" : "pointer",
+        opacity: pending ? 0.5 : 1,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        transition: "opacity 120ms ease",
+      }}
+    >
+      <GoogleG size={16} />
+      {pending ? "Redirecting" : "Continue with Google"}
+      {pending && <Dots color="var(--pt-text-muted)" size={3} />}
+    </button>
+  );
+}
+
+function OrDivider() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        margin: "16px 0",
+      }}
+    >
+      <span style={{ flex: 1, height: 0.5, background: "var(--pt-border)" }} />
+      <span
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: "0.18em",
+          color: "var(--pt-text-dim)",
+          textTransform: "uppercase",
+        }}
+      >
+        or
+      </span>
+      <span style={{ flex: 1, height: 0.5, background: "var(--pt-border)" }} />
+    </div>
   );
 }

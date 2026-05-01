@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Work_Sans, Instrument_Serif, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -29,6 +30,16 @@ export const metadata: Metadata = {
   description: "Snap the scoresheet. Chart the trail.",
 };
 
+const themeInitScript = `
+try {
+  var t = localStorage.getItem('pt-theme');
+  if (t !== 'paper' && t !== 'slate') {
+    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'slate' : 'paper';
+  }
+  document.documentElement.dataset.theme = t;
+} catch (e) {}
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,10 +48,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="light"
+      data-theme="paper"
       className={`${workSans.variable} ${instrumentSerif.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Script id="pt-theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }

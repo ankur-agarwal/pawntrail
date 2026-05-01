@@ -6,12 +6,12 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const nextRaw = searchParams.get("next");
   const next =
-    nextRaw && nextRaw.length > 0 && nextRaw.startsWith("/")
+    nextRaw && nextRaw.length > 0 && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
       ? nextRaw
       : "/dashboard";
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/signin?error=missing_code`);
+    return NextResponse.redirect(`${origin}/expired?reason=missing_code`);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -19,9 +19,11 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(
-      `${origin}/signin?error=${encodeURIComponent(error.message)}`,
+      `${origin}/expired?reason=${encodeURIComponent(error.message)}`,
     );
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(
+    `${origin}/welcome?next=${encodeURIComponent(next)}`,
+  );
 }

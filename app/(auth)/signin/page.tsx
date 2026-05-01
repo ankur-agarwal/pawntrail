@@ -1,7 +1,14 @@
-import { TrailMark } from "@/components/brand/TrailMark";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { AuthTrailMark } from "@/components/auth/icons";
 import { SigninForm } from "@/components/auth/SigninForm";
 
 type SearchParams = { error?: string; redirect?: string };
+
+const errorCopy: Record<string, string> = {
+  invalid_email: "That doesn't look like a valid email.",
+  oauth_init_failed: "Couldn't start Google sign-in. Try again.",
+  missing_code: "Sign-in link is incomplete. Try sending a new one.",
+};
 
 export default async function SigninPage({
   searchParams,
@@ -9,39 +16,46 @@ export default async function SigninPage({
   searchParams: Promise<SearchParams>;
 }) {
   const { error, redirect } = await searchParams;
-  const errorMessage = error ? decodeURIComponent(error) : null;
+  const inlineError = error
+    ? (errorCopy[error] ?? decodeURIComponent(error))
+    : null;
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        padding: 24,
-        background: "var(--pt-bg)",
-      }}
-    >
+    <AuthShell>
       <div
+        style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}
+      >
+        <AuthTrailMark size={56} />
+      </div>
+      <h1
         style={{
-          width: "100%",
-          maxWidth: 380,
-          padding: "32px 32px 28px",
-          border: "0.5px solid var(--pt-border-strong)",
-          borderRadius: 12,
-          background: "var(--pt-bg-elev)",
+          fontFamily: "var(--font-sans)",
+          fontSize: 26,
+          fontWeight: 500,
+          letterSpacing: "-0.01em",
+          lineHeight: 1.15,
+          margin: 0,
+          textAlign: "center",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: 14,
-          }}
-        >
-          <TrailMark size={52} />
-        </div>
-        <SigninForm errorMessage={errorMessage} redirectTo={redirect} />
-      </div>
-    </main>
+        Sign in to PawnTrail
+      </h1>
+      <p
+        style={{
+          fontFamily: "var(--font-serif)",
+          fontStyle: "italic",
+          fontSize: 17,
+          lineHeight: 1.4,
+          color: "var(--pt-text-muted)",
+          textAlign: "center",
+          margin: "6px 0 24px",
+        }}
+      >
+        We&rsquo;ll send a magic link to your inbox.
+        <br />
+        No passwords, ever.
+      </p>
+      <SigninForm errorMessage={inlineError} redirectTo={redirect} />
+    </AuthShell>
   );
 }

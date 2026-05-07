@@ -1,0 +1,49 @@
+@keyframes pt-board-warn {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes pt-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pt-confidence-blink {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.pt-review-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pt-border-strong) transparent;
+}
+
+.pt-review-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.pt-review-scroll::-webkit-scrollbar-thumb {
+  background: var(--pt-border-strong);
+  border-radius: 4px;
+}
+
+.pt-review-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

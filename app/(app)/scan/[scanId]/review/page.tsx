@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/current-user";
-import { ReviewEditor } from "@/components/scan/ReviewEditor";
+import { ReviewScreen } from "@/components/scan/review";
 import type { ExtractedMovePair } from "@/lib/scanner/types";
 
 type RawOcrShape = {
@@ -43,6 +43,11 @@ export default async function ScanReviewPage({
   }
 
   return (
-    <ReviewEditor scanId={scanId} initialPairs={pairs} sheetUrl={sheetUrl} />
+    <ReviewScreen
+      scanId={scanId}
+      initialPairs={pairs}
+      sheetUrl={sheetUrl}
+      scanCreatedAt={scan.created_at ?? undefined}
+    />
   );
 }

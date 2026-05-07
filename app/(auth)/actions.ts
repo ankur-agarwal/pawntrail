@@ -1,10 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { loadPublicEnv } from "@/lib/env";
 
 const emailSchema = z.object({
   email: z.string().email(),
@@ -13,6 +12,29 @@ const emailSchema = z.object({
 
 const PENDING_EMAIL_COOKIE = "pt-pending-email";
 const PENDING_REDIRECT_COOKIE = "pt-pending-redirect";
+const POST_AUTH_NEXT_COOKIE = "pt-auth-next";
+
+async function buildCallbackUrl(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto =
+    h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
+  if (!host) {
+    throw new Error("Cannot determine request host for auth callback URL");
+  }
+  return `${proto}://${host}/auth/callback`;
+}
+
+async function rememberPostAuthNext(next: string) {
+  const jar = await cookies();
+  jar.set(POST_AUTH_NEXT_COOKIE, next, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 10, // 10 minutes is plenty for an OAuth round-trip
+  });
+}
 
 export type EmailFormState = {
   error?: string;
@@ -43,18 +65,12 @@ export async function readPendingRedirect(): Promise<string | null> {
   return jar.get(PENDING_REDIRECT_COOKIE)?.value ?? null;
 }
 
-export async function clearPending() {
-  const jar = await cookies();
-  jar.delete(PENDING_EMAIL_COOKIE);
-  jar.delete(PENDING_REDIRECT_COOKIE);
-}
-
 export async function signInWithGoogle(formData: FormData) {
   const supabase = await createSupabaseServerClient();
-  const env = loadPublicEnv();
   const raw = formData.get("redirect");
   const next = typeof raw === "string" && raw.length > 0 ? raw : "/dashboard";
-  const callbackUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`;
+  await rememberPostAuthNext(next);
+  const callbackUrl = await buildCallbackUrl();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -88,9 +104,9 @@ export async function signInWithEmail(
   }
 
   const supabase = await createSupabaseServerClient();
-  const env = loadPublicEnv();
   const next = redirectTo ?? "/dashboard";
-  const callbackUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`;
+  await rememberPostAuthNext(next);
+  const callbackUrl = await buildCallbackUrl();
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
@@ -116,11 +132,11 @@ export async function resendMagicLink(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const env = loadPublicEnv();
   const jar = await cookies();
   const cachedNext = jar.get(PENDING_REDIRECT_COOKIE)?.value;
   const next = cachedNext && cachedNext.length > 0 ? cachedNext : "/dashboard";
-  const callbackUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`;
+  await rememberPostAuthNext(next);
+  const callbackUrl = await buildCallbackUrl();
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,

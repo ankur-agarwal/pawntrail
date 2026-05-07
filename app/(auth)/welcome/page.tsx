@@ -3,7 +3,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Dots, SuccessMark } from "@/components/auth/icons";
 import { AutoRedirect } from "../_components/AutoRedirect";
-import { clearPending } from "../actions";
 
 type SearchParams = { next?: string };
 
@@ -39,7 +38,6 @@ export default async function WelcomePage({
     .eq("id", user.id)
     .maybeSingle();
 
-  await clearPending();
   const name = firstName(profile, user.email);
 
   return (

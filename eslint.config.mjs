@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "public/stockfish/**",
     "design_handoff_pawntrail/**",
     "handoff/**",
+    "design/**",
   ]),
 ]);
 
